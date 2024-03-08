@@ -1,5 +1,6 @@
 using CommerceApp.ConfigMiddleware;
 using CommerceApp.ConfigService;
+using CommerceCore.Application.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,11 @@ builder.Services.ConfigService();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.ConfigSwaggerGroup();
+
+// Get the connection DB string
+builder.Services.AddOptions();
+var DbConnect = builder.Configuration.GetSection("MongoConnection").GetSection("shopDevDB");
+builder.Services.Configure<ShopDevDBSetting>(DbConnect);
 
 var app = builder.Build();
 
@@ -30,8 +36,6 @@ app.HandleException();
 
 // Anti forgery & other security config
 app.SecurityMiddleware();
-app.GetFortegyToken();
-app.CustomForgeryValidate();
 
 # endregion
 app.MapControllers();

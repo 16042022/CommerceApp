@@ -13,16 +13,6 @@ namespace CommerceApp.ConfigService
                 log.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestProperties;
                 log.RequestBodyLogLimit = 4096;
             });
-            services.AddAntiforgery(opt =>
-            {
-                opt.SuppressXFrameOptionsHeader = false;
-                opt.Cookie = new CookieBuilder()
-                {
-                    HttpOnly = true, SameSite = SameSiteMode.Lax,
-                    Expiration = TimeSpan.FromDays(7)
-                };
-                opt.HeaderName = "X-CSRF-TOKEN-HEADERNAME";
-            });
             // Add compression config
             services.AddResponseCompression(compress =>
             {

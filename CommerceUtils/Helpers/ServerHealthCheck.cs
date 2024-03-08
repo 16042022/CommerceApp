@@ -10,7 +10,7 @@ namespace CommerceUtils.Helpers
 {
     public class ServerHealthCheck : IServerHealthCheck
     {
-        private int TimeSleep = 5000;
+        private readonly int TimeSleep = 5000;
         public int GetConnectionNumber(MongoClient client)
         {
             return client.Settings.MaxConnecting - 1;

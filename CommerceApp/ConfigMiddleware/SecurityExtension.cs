@@ -15,6 +15,8 @@
             context.Response.Headers.Add("Strict-Transport-Security", "max-age=31536000");
             // prevent the browser from MIME-sniffing a response away from the declared content type
             context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+            // prevent clickjacking attacks
+            context.Response.Headers.Add("X-Frame-Options", "SAMEORIGIN");
             await next(context);
         }
     }

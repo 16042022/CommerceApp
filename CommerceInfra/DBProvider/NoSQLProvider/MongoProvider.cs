@@ -1,5 +1,6 @@
 ﻿using CommerceCore.Application.Interface;
 using CommerceCore.Application.Models;
+using CommerceCore.Domain.Entities;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using System;
@@ -10,25 +11,26 @@ using System.Threading.Tasks;
 
 namespace CommerceInfra.DBProvider.NoSQLProvider
 {
-    public class MongoProvider : INoSQLProvider<MongoClient>
+    public class MongoProvider: INoSQLProvider<Type, MongoClient>
     {
         private MongoClient _client;
         private IOptions<ShopDevDBSetting> _setting;
 
-        private MongoProvider(IOptions<ShopDevDBSetting> setting)
+        public MongoProvider(IOptions<ShopDevDBSetting> setting)
         {
             _setting = setting;
-            _client = new MongoClient(setting.Value.ConnectionString);
+            _client = new MongoClient(_setting.Value.ConnectionString);
         }
 
         public MongoClient GetConnection()
         {
-            if (_client == null)
-            {
-                var connect = new MongoProvider(_setting)._client;
-                _client = connect;
-            }
             return _client;
+        }
+
+        public dynamic GetDBSchema(string DBName)
+        {
+            return _client.GetDatabase(_setting.Value.DatabaseName)
+                .GetCollection<Type>(DBName);
         }
     }
 }

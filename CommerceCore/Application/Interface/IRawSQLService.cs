@@ -6,10 +6,7 @@ using System.Threading.Tasks;
 
 namespace CommerceCore.Application.Interface
 {
-    public interface INoSQLProvider<in Type, out DBProvider>
+    internal interface IRawSQLService
     {
-        DBProvider GetConnection();
-
-        dynamic GetDBSchema(string DBName);
     }
 }
