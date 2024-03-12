@@ -16,6 +16,8 @@ builder.Services.ConfigSwaggerGroup();
 builder.Services.AddOptions();
 var DbConnect = builder.Configuration.GetSection("MongoConnection").GetSection("shopDevDB");
 builder.Services.Configure<ShopDevDBSetting>(DbConnect);
+var JwtConfiuration = builder.Configuration.GetSection("JWTConfig");
+builder.Services.Configure<JwtConfig>(JwtConfiuration);
 
 var app = builder.Build();
 

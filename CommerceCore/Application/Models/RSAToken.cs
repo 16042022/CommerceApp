@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace CommerceCore.Application.Models
 {
-    public class JwtConfig
+    public class RSAToken
     {
-        public string Issuer { get; set; } = "";
-        public string Audience { get; set; } = "";
+        public string PrivateKey { get; set; } = "";
+        public string PublicKey { get; set; } = "";
     }
 }

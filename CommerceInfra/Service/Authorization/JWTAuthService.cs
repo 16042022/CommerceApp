@@ -12,36 +12,46 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Amazon.Runtime.Internal.Util;
+using CommerceCore.Application.Constant;
 
 namespace CommerceInfra.Service.Authorization
 {
-    public class JWTAuthService : IAuthService<ShopExample, KeyTokenStore>
+    public class JWTAuthService<T, T2> : IAuthService<T, T2>
+        where T: Shop
+        where T2: Keys
     {
-        private readonly string Path;
         private readonly JwtConfig keyConfig;
-        private ISQLService<ShopExample> _sqlService;
+        private ISQLService<T> _sqlService;
+        private ISQLService<T2> _addService;
+        private string PublicKey = "";
 
-        public JWTAuthService(ISQLService<ShopExample> sqlService,
-            IOptions<JwtConfig> _config)
+        public JWTAuthService(ISQLService<T> sqlService,
+            IOptions<JwtConfig> _config, ISQLService<T2> service)
         {
-            Path = Environment.GetEnvironmentVariable("KeyPath")!;
             _sqlService = sqlService;
             keyConfig = _config.Value;
+            _addService = service;
         }
 
-        public async Task<KeyTokenStore> SignUpUser(ShopExample item)
+        public async Task<T2> SignUpUser(T item)
         {
-            item.SetRoleInList("SHOP"); await _sqlService.Add(item);
+            item.Role.Add(RoleConstant.SHOP); await _sqlService.Add(item);
             // Generate both Token
             var AccessToken = GenerateAccessToken(keyConfig, item);
             var RefreshToken = GenerateRefreshToken();
-            var result = new KeyTokenStore()
+            var result = new Keys()
             {
                 AccessToken = AccessToken,
+                /*
+                 PublicKey = PublicKey,
+                 */
+                PublicKey = Convert.ToHexString(RandomNumberGenerator.GetBytes(64)), // SImple version
                 UserID = item.Id
             };
             result.SetTokenInList(RefreshToken);
-            return result;
+            // Add this object into DB
+            await _addService.Add((T2)result);
+            return (T2)result;
         }
 
         private static string GenerateRefreshToken()
@@ -50,10 +60,16 @@ namespace CommerceInfra.Service.Authorization
             return Convert.ToHexString(secretKey);
         }
 
-        private string GenerateAccessToken(JwtConfig config, ShopExample item)
+        private string GenerateAccessToken(JwtConfig config, Shop item)
         {
-            RsaSecurityKey rsaSecurityKey = GetRsaKey();
-            var signCredential = new SigningCredentials(rsaSecurityKey, SecurityAlgorithms.RsaSha256);
+            /*
+             * Ver 1: using Rsa asymmetric algorithm
+            RsaSecurityKey rsaSecurityKey = GetRsaKey(out PublicKey);
+            var signCredential = new SigningCredentials(rsaSecurityKey, SecurityAlgorithms.RsaSha256); 
+             */
+            // ver 2: using normal Random string version
+            var signCrendential2 = new SigningCredentials(new SymmetricSecurityKey(RandomNumberGenerator.GetBytes(64)),
+                SecurityAlgorithms.HmacSha256Signature); // private key as random string
 
             var token = new SecurityTokenDescriptor()
             {
@@ -62,11 +78,12 @@ namespace CommerceInfra.Service.Authorization
                 Subject = new ClaimsIdentity(new[]
                 {
                     new Claim(ClaimTypes.Name, item.Name),
-                    new Claim(ClaimTypes.Role, GetRoleBased(item.GetRoleInList("SHOP"))),
+                    new Claim(ClaimTypes.Role, CombineRole(item.Role)),
                     new Claim(ClaimTypes.Email, item.Email)
                 }),
-                Expires = DateTime.Now.AddMinutes(10),
-                SigningCredentials = signCredential
+                Expires = DateTime.Now.AddMinutes(15),
+                // SigningCredentials = signCredential
+                SigningCredentials = signCrendential2
             };
             var tokenHandle = new JwtSecurityTokenHandler();
             var preToken = tokenHandle.CreateToken(token);
@@ -74,12 +91,25 @@ namespace CommerceInfra.Service.Authorization
             return encryptToken;
         }
 
-        private RsaSecurityKey GetRsaKey()
+        private RSAToken GenerateSecurityTokens()
+        {
+            RSAToken result = new();
+            using (RSACryptoServiceProvider seed = new RSACryptoServiceProvider())
+            {
+                result.PrivateKey = seed.ExportRSAPrivateKeyPem();
+                result.PublicKey = seed.ExportRSAPublicKeyPem();
+            };
+            return result;
+        }
+
+        private RsaSecurityKey GetRsaKey(out string pK)
         {
             var rsaSeed = RSA.Create();
-            string xmlKey = File.ReadAllText(keyConfig.KeyPath);
-            rsaSeed.FromXmlString(xmlKey);
+            RSAToken key = GenerateSecurityTokens();
+            // Generatew Private Key
+            rsaSeed.ImportFromPem(key.PrivateKey);
             var securityKey = new RsaSecurityKey(rsaSeed);
+            pK = key.PublicKey;
             return securityKey;
         }
 
@@ -91,6 +121,20 @@ namespace CommerceInfra.Service.Authorization
             "0x08" => "SHOP",
             _ => throw new ArgumentOutOfRangeException(nameof(v), $"Not expected role value: {v}"),
         };
+
+        private static string CombineRole(IList<string> Role) 
+        {
+            string result = "";
+            for (int i = 0; i< Role.Count; ++i)
+            {
+                if (i == Role.Count - 1)
+                {
+                    result += GetRoleBased(Role[i]);
+                }
+                result += string.Join(',', GetRoleBased(Role[i]));
+            }
+            return result;
+        }
 
     }
 }

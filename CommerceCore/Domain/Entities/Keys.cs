@@ -10,11 +10,13 @@ using System.Threading.Tasks;
 
 namespace CommerceCore.Domain.Entities
 {
-    public class KeyTokenStore
+    public class Keys
     {
         [BsonRequired]
         public ObjectId UserID { get; set; }
         [BsonRequired]
+        public string PublicKey { get; set; } = "";
+        [BsonIgnore]
         public string AccessToken { get; set; } = "";
         [BsonElement]
         public ICollection<string> RefreshToken { get; set; } = new List<string>();

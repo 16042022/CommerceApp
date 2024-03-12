@@ -10,20 +10,20 @@ using System.Threading.Tasks;
 
 namespace CommerceInfra.Service.DBService
 {
-    public class MongoShopService : ISQLService<ShopExample>
+    public class MongoShopService<T> : ISQLService<T> where T: class
     {
-        private INoSQLProvider<ShopExample, MongoClient> SQLProvider;
+        private readonly INoSQLProvider<T, MongoClient> SQLProvider;
 
-        public MongoShopService(INoSQLProvider<ShopExample, MongoClient> sQLProvider)
+        public MongoShopService(INoSQLProvider<T, MongoClient> sQLProvider)
         {
             SQLProvider = sQLProvider;
         }
 
-        public async Task<ShopExample> Add(ShopExample obj)
+        public async Task<T> Add(T obj)
         {
             try
             {
-                var _cursor = (IMongoCollection<ShopExample>)SQLProvider.GetDBSchema("Shop");
+                var _cursor = (IMongoCollection<T>)SQLProvider.GetDBSchema(typeof(T).Name);
                 await _cursor.InsertOneAsync(obj); return obj;
             }
             catch (Exception ex)
@@ -32,9 +32,9 @@ namespace CommerceInfra.Service.DBService
             }
         }
 
-        public async Task AddRange(IEnumerable<ShopExample> list)
+        public async Task AddRange(IEnumerable<T> list)
         {
-            var _cursor = (IMongoCollection<ShopExample>)SQLProvider.GetDBSchema("Shop");
+            var _cursor = (IMongoCollection<T>)SQLProvider.GetDBSchema(typeof(T).Name);
             await _cursor.InsertManyAsync(list);
         }
 
@@ -43,15 +43,15 @@ namespace CommerceInfra.Service.DBService
             throw new NotImplementedException();
         }
 
-        public async Task<IQueryable<ShopExample>> GetAll()
-        {
-            var _cursor = (IMongoCollection<ShopExample>)SQLProvider.GetDBSchema("Shop");
-            return await Task.Run(() => _cursor.AsQueryable());
-        }
-
-        public Task UpdateRecord(ShopExample obj)
+        public Task UpdateRecord(T obj)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<IQueryable<T>> GetAll()
+        {
+            var _cursor = (IMongoCollection<T>)SQLProvider.GetDBSchema(typeof(T).Name);
+            return await Task.Run(() => _cursor.AsQueryable());
         }
     }
 }

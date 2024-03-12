@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace CommerceCore.Application.Interface
 {
-    public interface INoSQLProvider<in Type, out DBProvider>
+    public interface INoSQLProvider<T, DBProvider>
+        where T:class
+        where DBProvider : class
     {
         DBProvider GetConnection();
 

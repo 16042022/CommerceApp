@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace CommerceCore.Application.Feature.Shop.Command
 {
-    public class CreateShopCommand : IRequest<BaseResultWithData<KeyTokenStore>>
+    public class CreateShopCommand : IRequest<BaseResultWithData<Keys>>
     {
         public string Name { get; set; } = string.Empty;
         public string Email {  get; set; } = string.Empty;
@@ -23,24 +23,24 @@ namespace CommerceCore.Application.Feature.Shop.Command
     }
 
     public class CreateShopCommandHandle : 
-        IRequestHandler<CreateShopCommand, BaseResultWithData<KeyTokenStore>>
+        IRequestHandler<CreateShopCommand, BaseResultWithData<Keys>>
     {
-        private readonly ISQLService<ShopExample> _sqlService;
-        private IAuthService<ShopExample, KeyTokenStore> authService;
-        public CreateShopCommandHandle(ISQLService<ShopExample> sqlService, 
-            IAuthService<ShopExample, KeyTokenStore> service)
+        private readonly ISQLService<Domain.Entities.Shop> _sqlService;
+        private IAuthService<Domain.Entities.Shop, Keys> authService;
+        public CreateShopCommandHandle(ISQLService<Domain.Entities.Shop> sqlService, 
+            IAuthService<Domain.Entities.Shop, Keys> service)
         {
             _sqlService = sqlService;
             authService = service;
         }
 
-        public async Task<BaseResultWithData<KeyTokenStore>> Handle(CreateShopCommand request, 
+        public async Task<BaseResultWithData<Keys>> Handle(CreateShopCommand request, 
             CancellationToken cancellationToken)
         {
-            var result = new BaseResultWithData<KeyTokenStore>();
+            var result = new BaseResultWithData<Keys>();
             // Check mail
             var _cursor = await _sqlService.GetAll();
-            ShopExample? check = _cursor.FirstOrDefault(x => x.Email == request.Email);
+            Domain.Entities.Shop? check = _cursor.FirstOrDefault(x => x.Email == request.Email);
             if (check != null)
             {
                 result.StatusCode = (int)TaskStatus.Faulted;
@@ -48,12 +48,12 @@ namespace CommerceCore.Application.Feature.Shop.Command
                 result.Data = null;
             } else
             {
-                check = new ShopExample()
+                check = new Domain.Entities.Shop()
                 {
                     Name = request.Name, Email = request.Email,
                     Password = BCrypt.Net.BCrypt.HashPassword(request.Password)
                 };
-                KeyTokenStore outRes = await authService.SignUpUser(check);
+                Keys outRes = await authService.SignUpUser(check);
                 result.StatusCode = 201;
                 result.Message = "Sing-up process successful";
                 result.Data = outRes;

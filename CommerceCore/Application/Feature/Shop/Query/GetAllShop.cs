@@ -9,25 +9,26 @@ using System.Threading.Tasks;
 
 namespace CommerceCore.Application.Feature.Shop.Query
 {
-    public class GetAllShop : IRequest<IEnumerable<ShopExample>>
+    public class GetAllShop : IRequest<IEnumerable<Domain.Entities.Shop>>
     {
     }
 
-    public class GetAllSHopHandle : IRequestHandler<GetAllShop, IEnumerable<ShopExample>>
+    public class GetAllSHopHandle : IRequestHandler<GetAllShop, IEnumerable<Domain.Entities.Shop>>
     {
-        private readonly ISQLService<ShopExample> service;
+        private readonly ISQLService<Domain.Entities.Shop> service;
 
-        public GetAllSHopHandle(ISQLService<ShopExample> service)
+        public GetAllSHopHandle(ISQLService<Domain.Entities.Shop> service)
         {
             this.service = service;
         }
 
-        public async Task<IEnumerable<ShopExample>> Handle(GetAllShop request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<Domain.Entities.Shop>> Handle(GetAllShop request, 
+            CancellationToken cancellationToken)
         {
             var _cursor = await service.GetAll();
             var listResult = _cursor.ToList();
             return listResult == null ? throw new AggregateException("Empty return object list") 
-                : (IEnumerable<ShopExample>)listResult.AsReadOnly();
+                : (IEnumerable<Domain.Entities.Shop>)listResult.AsReadOnly();
         }
     }
 }

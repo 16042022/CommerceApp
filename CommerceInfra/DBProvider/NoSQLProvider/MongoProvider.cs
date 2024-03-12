@@ -11,7 +11,9 @@ using System.Threading.Tasks;
 
 namespace CommerceInfra.DBProvider.NoSQLProvider
 {
-    public class MongoProvider: INoSQLProvider<Type, MongoClient>
+    public class MongoProvider<T, DBProvider>: INoSQLProvider<T, DBProvider>
+        where T: class
+        where DBProvider : MongoClient
     {
         private MongoClient _client;
         private IOptions<ShopDevDBSetting> _setting;
@@ -22,15 +24,15 @@ namespace CommerceInfra.DBProvider.NoSQLProvider
             _client = new MongoClient(_setting.Value.ConnectionString);
         }
 
-        public MongoClient GetConnection()
-        {
-            return _client;
-        }
-
         public dynamic GetDBSchema(string DBName)
         {
             return _client.GetDatabase(_setting.Value.DatabaseName)
-                .GetCollection<Type>(DBName);
+                .GetCollection<T>(DBName);
+        }
+
+        public DBProvider GetConnection()
+        {
+            return (DBProvider)_client;
         }
     }
 }

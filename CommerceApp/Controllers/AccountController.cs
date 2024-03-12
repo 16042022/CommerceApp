@@ -1,4 +1,6 @@
 ﻿using CommerceCore.Application.Base;
+using CommerceCore.Application.Feature.Shop.Command;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,6 +10,12 @@ namespace CommerceApp.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
+        private ISender _sender;
+
+        public AccountController(ISender sender)
+        {
+            _sender = sender;
+        }
 
         [HttpGet("init")]
         public IActionResult HelloWord()
@@ -16,14 +24,22 @@ namespace CommerceApp.Controllers
         }
 
         [HttpPost("signup")]
-        public IActionResult TestSignUp()
+        public async Task<IActionResult> TestSignUp([FromBody] CreateShopCommand models)
         {
-            Console.WriteLine($"SignUp body: {Request.Body}");
-            return Ok(new BaseResult()
+            var result = await _sender.Send(models);
+            // Set refreshToken into cookie
+            SetTokenCookie(result.Data!.RefreshToken.Last());
+            return Ok(result);
+        }
+
+        private void SetTokenCookie(string v)
+        {
+            var option = new CookieOptions()
             {
-                StatusCode = 201,
-                Message = "SignUp successful"
-            });
+                HttpOnly = true, Expires = DateTime.Now.AddDays(7),
+                SameSite = SameSiteMode.Lax
+            };
+            Response.Cookies.Append("logToken", v, option);
         }
     }
 }

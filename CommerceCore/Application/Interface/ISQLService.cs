@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CommerceCore.Application.Interface
 {
-    public interface ISQLService<T> where T: class
+    public interface ISQLService<T> where T : class
     {
         Task<T> Add(T obj);
         Task AddRange (IEnumerable<T> list);

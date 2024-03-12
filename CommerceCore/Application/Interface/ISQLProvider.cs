@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace CommerceCore.Application.Interface
 {
-    public interface ISQLProvider<out DBProvider> : IDisposable
+    public interface ISQLProvider<out DBProvider> : IDisposable 
+        where DBProvider : class
     {
         DBProvider GetConnection();
     }
